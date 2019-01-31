@@ -1,0 +1,52 @@
+---
+title: "DDP Week 3 Assignment"
+author: Jaime Leal
+date: January 30, 2019
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE,warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(plotly)
+library(ggplot2)
+```
+
+
+## Total capacity of power plants in USA by energy source
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,results='hide', cache=TRUE}
+# Get data
+x = "https://www.eia.gov/maps/map_data/PowerPlants_US_EIA.zip"
+download.file(x,"PowerPlants_US.zip")
+unzip("PowerPlants_US.zip","PowerPlants_US_201810.dbf")
+power_plants <- foreign::read.dbf("PowerPlants_US_201810.dbf")
+
+cols <- c("Coal_MW"
+          ,"NG_MW"
+          ,"Crude_MW"
+          ,"Bio_MW"
+          ,"Hydro_MW"
+          ,"HydroPS_MW"
+          ,"Nuclear_MW"
+          ,"Solar_MW"
+          ,"Wind_MW"
+          ,"Geo_MW"
+          ,"Bat_MW"
+          ,"Other_MW" )
+
+totals <- power_plants %>% mutate_at(cols, as.numeric) %>% summarise_at(cols,sum,na.rm = T)
+totals <- as.data.frame(t(totals))
+colnames(totals) = "Production"
+totals$Source = gsub("_MW","",rownames(totals))
+totals <- totals %>% arrange(-Production)
+totals$Source = ordered(x = totals$Source, levels = totals$Source)
+```
+```{r, echo=FALSE}
+p <- ggplot(totals) + 
+  geom_col(aes(Source,Production,fill = Source)) +
+  theme(axis.text.x = element_text(angle = 40, hjust = 1)) + 
+  ylab("Capacity (MW)") + ggtitle("Total capacity of power plants by source \n (Data from EIA)")
+
+ggplotly(p)
+```
